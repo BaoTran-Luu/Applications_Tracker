@@ -1,5 +1,5 @@
 """manage application functions and operations"""
-
+from datetime import date
 
 class Application_Manager:
     def __init__(self):
@@ -39,3 +39,23 @@ class Application_Manager:
     def list_applications(self):
         """List all applications."""
         return self.applications
+
+    def update_application(self, application_ID, updates):
+        """Update an existing application with new values."""
+        application = self.get_application(application_ID)
+        if application is None:
+            print(f"Application with ID {application_ID} not found.")
+            return
+        allowed_fields = [
+            "company", "position", "job_type", "location", "contact",
+            "status", "applied_date", "interview_date", "url", "notes"]
+
+        for field, value in updates.items():
+            if field in allowed_fields:
+                setattr(application, field, value)
+                setattr(application, "updated_date", date.today().isoformat())
+            else:
+                print(f"Field '{field}' is not allowed for update.")
+        return True
+
+    

@@ -55,7 +55,7 @@ class JobApply:
 
 
     JOB_TYPES = ["vollzeit", "teilzeit", "minijob", "werkstudent", "praktikum"]
-    STATUSES = ["research","applied", "online assignment", "technical test", "interview",
+    STATUSES = ["research","applied", "online assignment", "technical test", "1st interview", "2nd interview",
                  "offer", "rejected", "withdrawn"]
 
     @staticmethod
