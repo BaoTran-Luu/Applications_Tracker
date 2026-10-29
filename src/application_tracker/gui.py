@@ -5,6 +5,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
 from datetime import date
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from .job_application import JobApply
 from .application_manager import Application_Manager
@@ -30,6 +32,7 @@ class Application_gui:
         self.create_main_section()
         self.create_button()
         self.create_dashboard()
+        self.create_status_chart()
         self.create_table()
         
         self.refresh_dashboard()
@@ -44,11 +47,11 @@ class Application_gui:
         self.style.configure("Section.TFrame",background="#F3F5F4" ) #very light gray
         self.style.configure("widget.TFrame", background="#E8F3E8") #pastel green
         self.style.configure("Title.TLabel", font=("Inter", 16, "bold"), padding=5, foreground="#254D35", background="#E8F3E8") #darkforestgreen, pastel green
-        self.style.configure("Subtitle.TLabel", font=("Inter", 10, "bold"), padding=5, foreground="#254D35", background="#E8F3E8") #darkforestgreen, pastel green
-        self.style.configure("Section.TLabel", font=("Inter", 10, "bold"),  padding=5, foreground="#254D35", background="#F3F5F4") #darkforestgreen, verylightgray
-        self.style.configure("Number.TLabel", font=("Inter", 12, "bold"), padding=5, foreground="#254D35", background="#E8F3E8") #darkforestgreen
-        self.style.configure("TButton", font=("Inter", 10), padding=5, foreground="#254D35", background="#E8F3E8") #darkforestgreen
-        self.style.configure("Entry.TLabel", font=("Inter", 10))
+        self.style.configure("Subtitle.TLabel", font=("Inter", 8, "bold"), padding=5, foreground="#254D35", background="#E8F3E8") #darkforestgreen, pastel green
+        self.style.configure("Section.TLabel", font=("Inter", 8, "bold"),  padding=5, foreground="#254D35", background="#F3F5F4") #darkforestgreen, verylightgray
+        self.style.configure("Number.TLabel", font=("Inter", 8, "bold"), padding=5, foreground="#254D35", background="#E8F3E8") #darkforestgreen
+        self.style.configure("TButton", font=("Inter", 8), padding=5, foreground="#254D35", background="#E8F3E8") #darkforestgreen
+        self.style.configure("Entry.TLabel", font=("Inter", 8))
 
     def create_title_frame(self):
         """Create the title frame for the application."""
@@ -65,26 +68,27 @@ class Application_gui:
         self.subtitle_label = ttk.Label(self.title_frame, text= "Rejection is just a redirection", style="Subtitle.TLabel")
         self.subtitle_label.pack(pady=(0, 5))
 
-
     def create_dashboard(self):
-        """ Create the dashboard frame."""
+        """ Create the dashboard for total applications, total interview and later add chart."""
         self.dashboard_frame = ttk.Frame(self.title_frame, style="Section.TFrame", relief=tk.RIDGE, borderwidth=2)
         self.dashboard_frame.pack(fill=tk.X, padx=10, pady=10)
-
         self.dashboard_title = ttk.Label(self.dashboard_frame, text="Jobs search journey", style="Section.TLabel")
         self.dashboard_title.pack(anchor='w', padx=(0, 10))
 
+        self.counting_frame = ttk.Frame(self.dashboard_frame, style="Section.TFrame", relief=tk.RIDGE, borderwidth=2)
+        self.counting_frame.pack(side=tk.LEFT, padx=10, pady=10)
+
         # Create the total frame to display total jobs searched
-        self.total_frame = ttk.Frame(self.dashboard_frame, style="widget.TFrame", relief=tk.RIDGE, borderwidth=2)
-        self.total_frame.pack(side=tk.LEFT, fill=tk.X, padx=5, expand=True)
+        self.total_frame = ttk.Frame(self.counting_frame, style="widget.TFrame", relief=tk.RIDGE, borderwidth=2)
+        self.total_frame.pack(side=tk.TOP,fill=tk.X, padx=5, expand=True)
         self.total_label = ttk.Label(self.total_frame, text="Total Jobs", style="Subtitle.TLabel")
         self.total_label.pack(anchor='w', padx=5, pady=(5, 0))
         self.total_number_label = ttk.Label(self.total_frame, text=str(len(self.manager.list_applications())), style="Number.TLabel")
         self.total_number_label.pack(anchor='w', padx=5, pady=(0, 5))
 
         # Create the applied frame to display total applications
-        self.applied_frame = ttk.Frame(self.dashboard_frame, style="widget.TFrame", relief=tk.RIDGE, borderwidth=2)
-        self.applied_frame.pack(side=tk.LEFT, fill=tk.X, padx=5, expand=True)
+        self.applied_frame = ttk.Frame(self.counting_frame, style="widget.TFrame", relief=tk.RIDGE, borderwidth=2)
+        self.applied_frame.pack(side=tk.TOP,fill=tk.X, padx=5, expand=True)
         self.applied_label = ttk.Label(self.applied_frame, text="Active Applications", style="Subtitle.TLabel")
         self.applied_label.pack(anchor='w', padx=5, pady=(5, 0))
         #this part count total number of active applications including those in the interview stage
@@ -93,25 +97,56 @@ class Application_gui:
         self.applied_number_label.pack(anchor='w', padx=5, pady=(0, 5))
 
         #Create the interviewed frame to display total interviews
-        self.interviewed_frame = ttk.Frame(self.dashboard_frame, style="widget.TFrame", relief=tk.RIDGE, borderwidth=2)
-        self.interviewed_frame.pack(side=tk.LEFT, fill=tk.X, padx=5, expand=True)
+        self.interviewed_frame = ttk.Frame(self.counting_frame, style="widget.TFrame", relief=tk.RIDGE, borderwidth=2)
+        self.interviewed_frame.pack(side=tk.TOP, fill=tk.X, padx=5, expand=True)
         self.interviewed_label = ttk.Label(self.interviewed_frame, text="Interviews", style="Subtitle.TLabel")
         self.interviewed_label.pack(anchor='w', padx=5, pady=(5, 0))
         self.interviewed_number_label = ttk.Label(self.interviewed_frame,
                                                    text=str(len(self.manager.list_applications_by_status("interview"))), style="Number.TLabel")
         self.interviewed_number_label.pack(anchor='w', padx=5, pady=(0, 5)) 
 
+    def create_status_chart(self):
+        self.figure = Figure(figsize=(3,2.2), dpi=100)
+        self.ax = self.figure.add_subplot(111)
+        statuses = ["Total", "Active", "Applied", "Interview", "Rejected", "Offer"]
+        total = len(self.manager.applications)
+        applied = total - len(self.manager.list_applications_by_status("Research"))
+        active = sum( 1 for application in self.manager.applications
+                if application.status.lower() not in ["rejected", "withdrawn", "offer"])
+        interview = len(self.manager.list_applications_by_status("Interview"))
+        rejected = len(self.manager.list_applications_by_status("Rejected"))
+        offer = len(self.manager.list_applications_by_status ("Offer"))
+
+        counts= [total, active, applied, interview, rejected, offer]
+
+        #draw the bar chart
+        bars = self.ax.barh(statuses, counts)
+        self.ax.bar_label(bars, padding=3, fontsize=8)
+        self.ax.tick_params(axis="y", labelsize=8)
+        self.ax.tick_params(axis="x", labelsize=8)
+        self.ax.set_title("Job Search Overview", fontsize=8)
+        self.ax.invert_yaxis()
+        self.ax.spines["top"].set_visible(False)
+        self.ax.spines["right"].set_visible(False)
+        self.figure.tight_layout()
+
+
+        self.chart_canvas = FigureCanvasTkAgg(self.figure, master= self.dashboard_frame)
+        self.chart_canvas.draw()
+        self.chart_canvas.get_tk_widget().pack(fill=tk.NONE, side=tk.LEFT, expand=False, padx=10, pady=10)
+
     def create_main_section(self):
         """Create the main section for Button, Table and later is the chart"""
         self.main_section_frame = ttk.Frame(self.root, style="Section.TFrame")
         self.main_section_frame.pack(fill=tk.BOTH, expand=True)
 
+  
     #Create buttons
     def create_button(self):
         """create button for add application, update and remove"""
         #Create button frame
         self.button_frame = ttk.Frame(self.main_section_frame, style="Section.TFrame")
-        self.button_frame.pack(fill=tk.X, padx=15, pady=10)
+        self.button_frame.pack(side=tk.LEFT, fill=tk.X, padx=15, pady=8)
         
         #Add Button function
         self.add_button = ttk.Button(self.button_frame, text="Add Application",style="TButton",
@@ -138,8 +173,7 @@ class Application_gui:
         self.add_window_frame.pack(fill=tk.BOTH, expand=True) 
 
         self.form_title = ttk.Label(self.add_window_frame,text="Application Details",style="Title.TLabel",anchor="center")
-        self.form_title.pack(fill=tk.BOTH,anchor="w",padx=10,pady=(10, 15)
-)
+        self.form_title.pack(fill=tk.BOTH,anchor="w",padx=10,pady=(10, 15))
         #add the grid form to make the entry table appear nicer
         self.add_form_frame = ttk.Frame(self.add_window_frame)
         self.add_form_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
@@ -173,7 +207,7 @@ class Application_gui:
 
         ttk.Label(self.add_form_frame, text="Status", style="Entry.TLabel").grid(row=6, column=0, sticky="w", padx=10, pady=5)
         self.status_entry = ttk.Combobox(self.add_form_frame,
-                            values=["Research","Applied", "Interview","Offer", "Rejected", "Withdrawn"],
+                            values=["Research","Applied", "Interview","Offer", "Rejected"],
                             state="readonly")
         self.status_entry.grid(row=6, column=1, sticky="ew", padx=10, pady=6)
         self.status_entry.set("Applied")  # default status
@@ -181,16 +215,15 @@ class Application_gui:
         ttk.Label(self.add_form_frame, text="Applied Date").grid(row=7, column=0, sticky="w", padx=10, pady=5)
         self.applied_date_entry = DateEntry(  # add calendar
             self.add_form_frame,
-            date_pattern="yyyy-mm-dd"
-        )
+            date_pattern="yyyy-mm-dd")
         self.applied_date_entry.grid(row=7, column=1, sticky="ew", padx=10, pady=6)
         #tick the box only if an interview is schedule, otherwise the date is saved as empty
+        
         self.interview_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(self.add_form_frame, text="Interview Date", variable=self.interview_var).grid(row=8, column=0, sticky="w", padx=10, pady=5)
         self.interview_date_entry = DateEntry(  # add calendar
             self.add_form_frame,
-            date_pattern="yyyy-mm-dd"
-        )
+            date_pattern="yyyy-mm-dd")
         self.interview_date_entry.grid(row=8, column=1, sticky="ew", padx=10, pady=6)
 
         ttk.Label(self.add_form_frame, text="URL", style="Entry.TLabel").grid(row=9, column=0, sticky="w", padx=10, pady=5)
@@ -233,8 +266,7 @@ class Application_gui:
         self.update_window_frame = ttk.Frame(self.update_window, style="Section.TFrame")
         self.update_window_frame.pack(fill=tk.BOTH, expand=True) 
         self.form_title = ttk.Label(self.update_window_frame,text="Application Details",style="Title.TLabel",anchor="center")
-        self.form_title.pack(fill=tk.BOTH,anchor="w",padx=10,pady=(10, 15)
-)
+        self.form_title.pack(fill=tk.BOTH,anchor="w",padx=10,pady=(10, 15))
         #add the grid form to make the entry table appear nicer
         self.update_form_frame = ttk.Frame(self.update_window_frame)
         self.update_form_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
@@ -272,7 +304,7 @@ class Application_gui:
 
         ttk.Label(self.update_form_frame, text="Status", style="Entry.TLabel").grid(row=6, column=0, sticky="w", padx=10, pady=5)
         self.status_entry = ttk.Combobox(self.update_form_frame,
-                            values=["Research","Applied", "Interview","Offer", "Rejected", "Withdrawn"],
+                            values=["Research","Applied", "Interview","Offer", "Rejected"],
                             state="readonly")
         self.status_entry.set(application.status)
         self.status_entry.grid(row=6, column=1, sticky="ew", padx=10, pady=6)
@@ -280,8 +312,7 @@ class Application_gui:
         ttk.Label(self.update_form_frame, text="Applied Date").grid(row=7, column=0, sticky="w", padx=10, pady=5)
         self.applied_date_entry = DateEntry(  # add calendar
             self.update_form_frame,
-            date_pattern="yyyy-mm-dd"
-        )
+            date_pattern="yyyy-mm-dd")
         self.applied_date_entry.set_date(application.applied_date)
         self.applied_date_entry.grid(row=7, column=1, sticky="ew", padx=10, pady=6)
 
@@ -289,8 +320,7 @@ class Application_gui:
         ttk.Checkbutton(self.update_form_frame, text="Interview Date", variable=self.interview_var).grid(row=8, column=0, sticky="w", padx=10, pady=5)
         self.interview_date_entry = DateEntry(  # add calendar
             self.update_form_frame,
-            date_pattern="yyyy-mm-dd"
-        )
+            date_pattern="yyyy-mm-dd")
         if application.interview_date:
             self.interview_date_entry.set_date(application.interview_date)
         self.interview_date_entry.grid(row=8, column=1, sticky="ew", padx=10, pady=6)
@@ -329,8 +359,7 @@ class Application_gui:
                 "applied_date": JobApply.valid_date(self.applied_date_entry.get(),"applied_date"),
                 "interview_date": JobApply.valid_date(self.interview_date_entry.get(),"interview_date"),
                 "url": self.URL_entry.get().strip(),
-                "notes": self.notes_entry.get().strip(),
-            }
+                "notes": self.notes_entry.get().strip()}
         except ValueError as e:
             messagebox.showerror("Invalid Input", str(e))
             return
@@ -342,7 +371,6 @@ class Application_gui:
         self.refresh_table()
         self.update_window.destroy()
 
-#check this part
     def save_application(self):
         """Save the new application"""
         if not self.company_entry.get().strip():
@@ -359,8 +387,7 @@ class Application_gui:
                 applied_date = self.applied_date_entry.get(),
                 interview_date = self.interview_date_entry.get(),
                 url = self.URL_entry.get().strip(),
-                notes= self.notes_entry.get().strip()
-            )
+                notes= self.notes_entry.get().strip())
         except ValueError as error:
             messagebox.showerror("Invalid Input", str(error))
             return
@@ -374,23 +401,23 @@ class Application_gui:
         self.add_window.destroy()
         
     def remove_app(self):
-            """Remove the selected application"""
-            selected = self.tree.selection()
-            if not selected:
-                messagebox.showwarning("No Selection", "Please select an application to remove.")
-                return
-            application_ID = int(self.tree.item(selected[0], "values")[0])
-            application = self.manager.get_application(application_ID)
-            confirm = messagebox.askyesno("Remove application",
-                                        f"Do you want to delete this application: {application.position} at {application.company}?")
-            if not confirm:
-                return
-                
-            self.manager.remove_application(application_ID)
-            self.save_data()
-            self.refresh_dashboard()
-            self.refresh_table()
-            messagebox.showinfo("Deleted", "Application deleted successfully.")
+        """Remove the selected application"""
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("No Selection", "Please select an application to remove.")
+            return
+        application_ID = int(self.tree.item(selected[0], "values")[0])
+        application = self.manager.get_application(application_ID)
+        confirm = messagebox.askyesno("Remove application",
+                                    f"Do you want to delete this application: {application.position} at {application.company}?")
+        if not confirm:
+            return
+            
+        self.manager.remove_application(application_ID)
+        self.save_data()
+        self.refresh_dashboard()
+        self.refresh_table()
+        messagebox.showinfo("Deleted", "Application deleted successfully.")
 
     def refresh_dashboard(self):
         """Refresh the dashboard to update the displayed information."""
@@ -401,8 +428,29 @@ class Application_gui:
         self.interviewed_number_label.config(text=str(len(self.manager.list_applications_by_status("Interview"))))
 
     def create_table(self):
-        """Create the table to display applications."""       
-        self.tree = ttk.Treeview(self.main_section_frame, 
+        """Create the table to display applications."""  
+        #Create search section     
+        self.search_frame = ttk.Frame(self.main_section_frame, style= "Section.TFrame")
+        self.search_frame.pack(side=tk.LEFT,fill=tk.X, padx=15, pady=10)
+       
+        #create status filter
+        self.status_filter = ttk.Combobox(self.search_frame, values=[
+            "All", "Research","Applied", "Interview", "Offer", "Rejected"],
+            state="readonly", width=18 )
+        self.status_filter.set("All")
+        self.status_filter.pack(side=tk.RIGHT, padx=5, pady=8)
+        self.status_filter.bind("<<ComboboxSelected>>", self.search_application)
+        #search button and search bar
+        self.search_button = ttk.Button(self.search_frame, text="Search Application", style="TButton", command=self.open_app_detail
+                                        ).pack(side=tk.RIGHT,padx=(0,5))
+        self.search_entry = ttk.Entry(self.search_frame, width=50)
+        self.search_entry.pack(fill=tk.X, side=tk.RIGHT, padx=5, pady=10, ipady=5, expand=True)
+        self.search_entry.bind("<KeyRelease>", self.search_application)
+     
+        #Create table to show application
+        self.table_frame = ttk.Frame(self.root, style= "Section.TFrame")
+        self.table_frame.pack(side=tk.BOTTOM,fill=tk.X, padx=15, pady=10)
+        self.tree = ttk.Treeview(self.table_frame, 
             columns=("ID", "Company", "Position", "Status","Notes", "Updated Date"),
             show="headings")
         for column in self.tree["columns"]:
@@ -415,6 +463,74 @@ class Application_gui:
         self.tree.column("Updated Date", width=100, stretch=False)
         self.tree.pack(fill=tk.BOTH, expand=True)
 
+    def search_application(self, event=None):
+        """filter the table while entering search entry"""
+        search_text = self.search_entry.get().strip().lower()  
+        selected_status = self.status_filter.get()      
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        for application in self.manager.applications:
+            company = (application.company or "").lower()
+            position = (application.position or "").lower()
+
+            matches_search = (search_text in company or search_text in position)
+            matches_status = (selected_status == "All" 
+                              or application.status.lower() == selected_status.lower())
+
+            if matches_search and matches_status:
+                self.tree.insert("", tk.END, 
+                                 values=(
+                                     application.application_id,
+                                     application.company,
+                                     application.position,
+                                     application.status,
+                                     application.notes,
+                                     application.updated_date))
+                
+    def open_app_detail(self):
+        """show application detail in new window"""
+        search_text = self.search_entry.get().strip().lower()
+        matching_applications = [application 
+                                for application in self.manager.applications
+                                if search_text in application.company.lower()
+                                or search_text in application.position.lower()]
+        if not matching_applications:
+            messagebox.showinfo("No Result", "No matching application found")
+            return
+
+        #create new window for application detail
+        detail_window = tk.Toplevel(self.root)
+        detail_window.title("Detail Search Results")
+        detail_window.geometry("600x600")
+
+        results_frame = ttk.Frame(detail_window, style="Section.TFrame", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True)
+
+        for application in matching_applications:
+            card = ttk.LabelFrame(results_frame, text=f"{application.company} - {application.position}", padding=10)
+            card.pack(fill=tk.X, padx=5, pady=8)
+
+            details={
+                "Application ID": application.application_id,
+                "Company": application.company,
+                "Position": application.position,
+                "Type of job": application.job_type,
+                "Location": application.location,
+                "Contact": application.contact,
+                "Status": application.status,
+                "Applied_date": application.applied_date,
+                "Updated_date": application.updated_date,
+                "Interview_date": application.interview_date,
+                "URL": application.url,
+                "Notes": application.notes}
+
+            for row, (label, value) in enumerate(details.items()):
+                ttk.Label( card, text=f"{label}:", style="Entry.TLabel"
+                        ).grid(row=row, column=0, sticky="nw", padx=5, pady=3)
+                ttk.Label(card, text=str(value) if value else "Not provided", wraplength=400, justify=tk.LEFT
+                        ).grid(row=row, column=1, sticky="nw", padx=5, pady=3)
+
+            card.grid_columnconfigure(1, weight=1)
 
     def refresh_table(self):
         """Display all applications in the table."""
@@ -436,7 +552,6 @@ class Application_gui:
     def save_data(self):
         """Save all applications to the JSON file."""
         save_applications_to_file( self.manager.applications,"test_applications.json")
-
         
     def run(self):
             """Run the main loop of the GUI."""

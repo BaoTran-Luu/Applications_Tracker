@@ -59,7 +59,7 @@ class JobApply:
 
 
     JOB_TYPES = ["Vollzeit", "Teilzeit", "Minijob", "Werkstudent", "Praktikum"]
-    STATUSES = ["Research","Applied", "Interview", "Offer", "Rejected", "Withdrawn"]
+    STATUSES = ["Research","Applied", "Interview", "Offer", "Rejected"]
 
     @staticmethod
     def valid_job_type(job_type):
