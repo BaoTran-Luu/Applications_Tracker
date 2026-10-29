@@ -11,8 +11,8 @@ class JobApply:
         self.position = position.title()
         self.job_type = JobApply.valid_job_type(job_type) # fulltime, parttime, minijob, werkstudent
         self.location = location
-        self.contact = contact.title()
-        self.status = JobApply.valid_status(status) #applied, online assignment, techinical test, interview, offer, rejected, withdrawn
+        self.contact = contact.strip()
+        self.status = JobApply.valid_status(status) #research, applied, interview, offer, rejected, withdrawn
         self.applied_date = JobApply.valid_date(applied_date, "applied_date")
         self.updated_date = date.today().isoformat() # Update the updated_date when the application is created or modified
         self.interview_date = JobApply.valid_date(interview_date, "interview_date") # could take None if not scheduled yet
@@ -24,6 +24,7 @@ class JobApply:
     def to_dict(self):
         """Convert the JobApply instance to a dictionary."""
         return {
+            "application_id": getattr(self, "application_id", None),
             "company": self.company,
             "position": self.position,
             "job_type": self.job_type,
@@ -40,28 +41,30 @@ class JobApply:
     @classmethod
     def from_dict(cls, data):
         """Create a JobApply instance from a dictionary."""
-        return cls(
+        application = cls(
             company=data.get("company"),
             position=data.get("position"),
             job_type=data.get("job_type"),
             location=data.get("location"),
             contact=data.get("contact"),
             status=data.get("status"),
-            applied_date=data.get("applied_date"),
-            interview_date=data.get("interview_date"),
+            applied_date = data.get("applied_date"),
+            interview_date= data.get("interview_date"),
             url=data.get("url"),
             notes=data.get("notes")
         )
+        application_id = data.get("application_id")
+        application.application_id = (int(application_id) if application_id is not None else None)
+        return application
 
 
-    JOB_TYPES = ["vollzeit", "teilzeit", "minijob", "werkstudent", "praktikum"]
-    STATUSES = ["research","applied", "online assignment", "technical test", "1st interview", "2nd interview",
-                 "offer", "rejected", "withdrawn"]
+    JOB_TYPES = ["Vollzeit", "Teilzeit", "Minijob", "Werkstudent", "Praktikum"]
+    STATUSES = ["Research","Applied", "Interview", "Offer", "Rejected", "Withdrawn"]
 
     @staticmethod
     def valid_job_type(job_type):
         """Validate the job type. Accepts predefined job types."""
-        job_type = job_type.lower()
+        job_type = job_type.title()
         if job_type in JobApply.JOB_TYPES:
             return job_type
         else:
@@ -70,7 +73,7 @@ class JobApply:
     @staticmethod
     def valid_status(status):
         """Validate the application status. Accepts predefined statuses."""
-        status = status.lower()
+        status = status.title()
         if status in JobApply.STATUSES:
             return status
         else:

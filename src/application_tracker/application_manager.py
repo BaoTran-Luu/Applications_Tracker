@@ -12,6 +12,7 @@ class Application_Manager:
             self.next_id = max(job.application_id for job in self.applications) + 1
         else:
             self.next_id = 1
+    
 
     def add_application(self, application):
         """Add a new application to the list."""
@@ -40,6 +41,11 @@ class Application_Manager:
         """List all applications."""
         return self.applications
 
+    def list_applications_by_status(self, status):
+        """List all applications with a specific status."""
+        return [job for job in self.applications if job.status == status]
+    
+    
     def update_application(self, application_ID, updates):
         """Update an existing application with new values."""
         application = self.get_application(application_ID)

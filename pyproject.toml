@@ -7,7 +7,9 @@ authors = [
     { name = "Bao Tran Luu", email = "tranluu.lb@gmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "tkcalendar>=1.6.1",
+]
 
 [project.scripts]
 application-tracker = "application_tracker:main"
