@@ -17,7 +17,7 @@ class Application_gui:
         """Create the main GUI for the Application Tracker."""
         self.root = tk.Tk()
         self.root.title("Job Application Tracker")
-        self.root.geometry("1000x600")
+        self.root.geometry("1000x900")
         
         #connect to the application manager
         self.manager = Application_Manager()
@@ -61,7 +61,7 @@ class Application_gui:
     def create_title(self):
         """Create the title label for the application."""
         self.title_label = ttk.Label(self.title_frame, text="Job Application Tracker", style="Title.TLabel")
-        self.title_label.pack(pady=(10, 5))
+        self.title_label.pack(pady=5)
 
     def create_subtitle(self):
         """Create the subtitle label for the application."""
@@ -71,9 +71,10 @@ class Application_gui:
     def create_dashboard(self):
         """ Create the dashboard for total applications, total interview and later add chart."""
         self.dashboard_frame = ttk.Frame(self.title_frame, style="Section.TFrame", relief=tk.RIDGE, borderwidth=2)
-        self.dashboard_frame.pack(fill=tk.X, padx=10, pady=10)
-        self.dashboard_title = ttk.Label(self.dashboard_frame, text="Jobs search journey", style="Section.TLabel")
-        self.dashboard_title.pack(anchor='w', padx=(0, 10))
+        self.dashboard_frame.pack(fill=tk.X, padx=10)
+    # Check the dashboard design
+        #  self.dashboard_title = ttk.Label(self.dashboard_frame, text="Jobs search journey", style="Section.TLabel")
+        #  self.dashboard_title.pack(anchor='w', padx=(0, 5))
 
         self.counting_frame = ttk.Frame(self.dashboard_frame, style="Section.TFrame", relief=tk.RIDGE, borderwidth=2)
         self.counting_frame.pack(side=tk.LEFT, padx=10, pady=10)
@@ -82,31 +83,31 @@ class Application_gui:
         self.total_frame = ttk.Frame(self.counting_frame, style="widget.TFrame", relief=tk.RIDGE, borderwidth=2)
         self.total_frame.pack(side=tk.TOP,fill=tk.X, padx=5, expand=True)
         self.total_label = ttk.Label(self.total_frame, text="Total Jobs", style="Subtitle.TLabel")
-        self.total_label.pack(anchor='w', padx=5, pady=(5, 0))
+        self.total_label.pack(side=tk.LEFT,anchor='w', padx=5, pady=(5, 0))
         self.total_number_label = ttk.Label(self.total_frame, text=str(len(self.manager.list_applications())), style="Number.TLabel")
-        self.total_number_label.pack(anchor='w', padx=5, pady=(0, 5))
+        self.total_number_label.pack(side=tk.RIGHT, anchor='w', padx=5, pady=(0, 5))
 
         # Create the applied frame to display total applications
         self.applied_frame = ttk.Frame(self.counting_frame, style="widget.TFrame", relief=tk.RIDGE, borderwidth=2)
         self.applied_frame.pack(side=tk.TOP,fill=tk.X, padx=5, expand=True)
         self.applied_label = ttk.Label(self.applied_frame, text="Active Applications", style="Subtitle.TLabel")
-        self.applied_label.pack(anchor='w', padx=5, pady=(5, 0))
+        self.applied_label.pack(side=tk.LEFT,anchor='w', padx=5, pady=(5, 0))
         #this part count total number of active applications including those in the interview stage
         self.applied_number_label = ttk.Label(self.applied_frame, text=str(len(self.manager.list_applications_by_status("Applied")) 
                                                 + len(self.manager.list_applications_by_status("Interview"))), style="Number.TLabel")
-        self.applied_number_label.pack(anchor='w', padx=5, pady=(0, 5))
+        self.applied_number_label.pack(side=tk.RIGHT,anchor='w', padx=5, pady=(0, 5))
 
         #Create the interviewed frame to display total interviews
         self.interviewed_frame = ttk.Frame(self.counting_frame, style="widget.TFrame", relief=tk.RIDGE, borderwidth=2)
         self.interviewed_frame.pack(side=tk.TOP, fill=tk.X, padx=5, expand=True)
         self.interviewed_label = ttk.Label(self.interviewed_frame, text="Interviews", style="Subtitle.TLabel")
-        self.interviewed_label.pack(anchor='w', padx=5, pady=(5, 0))
+        self.interviewed_label.pack(side=tk.LEFT,anchor='w', padx=5, pady=(5, 0))
         self.interviewed_number_label = ttk.Label(self.interviewed_frame,
                                                    text=str(len(self.manager.list_applications_by_status("interview"))), style="Number.TLabel")
-        self.interviewed_number_label.pack(anchor='w', padx=5, pady=(0, 5)) 
+        self.interviewed_number_label.pack(side=tk.RIGHT,anchor='w', padx=5, pady=(0, 5)) 
 
     def create_status_chart(self):
-        self.figure = Figure(figsize=(3,2.2), dpi=100)
+        self.figure = Figure(figsize=(6,2.2), dpi=100)
         self.ax = self.figure.add_subplot(111)
         statuses = ["Total", "Active", "Applied", "Interview", "Rejected", "Offer"]
         total = len(self.manager.applications)
@@ -120,7 +121,8 @@ class Application_gui:
         counts= [total, active, applied, interview, rejected, offer]
 
         #draw the bar chart
-        bars = self.ax.barh(statuses, counts)
+        colors = ["#4E79A7", "#59A14F", "#F28E2B", "#E15759","#254D35" ]
+        bars = self.ax.barh(statuses, counts, color = colors)
         self.ax.bar_label(bars, padding=3, fontsize=8)
         self.ax.tick_params(axis="y", labelsize=8)
         self.ax.tick_params(axis="x", labelsize=8)
@@ -128,20 +130,20 @@ class Application_gui:
         self.ax.invert_yaxis()
         self.ax.spines["top"].set_visible(False)
         self.ax.spines["right"].set_visible(False)
+       # In case add one more chart later
         self.figure.tight_layout()
 
 
         self.chart_canvas = FigureCanvasTkAgg(self.figure, master= self.dashboard_frame)
         self.chart_canvas.draw()
-        self.chart_canvas.get_tk_widget().pack(fill=tk.NONE, side=tk.LEFT, expand=False, padx=10, pady=10)
+        self.chart_canvas.get_tk_widget().pack(fill=tk.BOTH, side=tk.RIGHT, expand=False, padx=10, pady=10)
 
     def create_main_section(self):
         """Create the main section for Button, Table and later is the chart"""
         self.main_section_frame = ttk.Frame(self.root, style="Section.TFrame")
-        self.main_section_frame.pack(fill=tk.BOTH, expand=True)
+        self.main_section_frame.pack(fill=tk.X)
 
-  
-    #Create buttons
+   #Create buttons
     def create_button(self):
         """create button for add application, update and remove"""
         #Create button frame
@@ -431,7 +433,7 @@ class Application_gui:
         """Create the table to display applications."""  
         #Create search section     
         self.search_frame = ttk.Frame(self.main_section_frame, style= "Section.TFrame")
-        self.search_frame.pack(side=tk.LEFT,fill=tk.X, padx=15, pady=10)
+        self.search_frame.pack(side=tk.LEFT,fill=tk.X)
        
         #create status filter
         self.status_filter = ttk.Combobox(self.search_frame, values=[
@@ -449,7 +451,7 @@ class Application_gui:
      
         #Create table to show application
         self.table_frame = ttk.Frame(self.root, style= "Section.TFrame")
-        self.table_frame.pack(side=tk.BOTTOM,fill=tk.X, padx=15, pady=10)
+        self.table_frame.pack(side=tk.BOTTOM,fill=tk.BOTH, padx=15, pady=10, expand=True)
         self.tree = ttk.Treeview(self.table_frame, 
             columns=("ID", "Company", "Position", "Status","Notes", "Updated Date"),
             show="headings")

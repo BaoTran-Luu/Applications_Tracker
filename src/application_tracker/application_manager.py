@@ -59,9 +59,9 @@ class Application_Manager:
         for field, value in updates.items():
             if field in allowed_fields:
                 setattr(application, field, value)
-                setattr(application, "updated_date", date.today().isoformat())
             else:
                 print(f"Field '{field}' is not allowed for update.")
+        application.updated_date = date.today()
         return True
 
     
