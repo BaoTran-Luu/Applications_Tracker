@@ -6,7 +6,7 @@ from datetime import datetime, date
 class JobApply:
 
    
-    def __init__(self, company, position, job_type, location, contact, status, applied_date,  interview_date, url, notes):
+    def __init__(self, company, position, job_type, location, contact, status, applied_date, updated_date, interview_date, url, notes):
         self.company = company
         self.position = position.title()
         self.job_type = JobApply.valid_job_type(job_type) # fulltime, parttime, minijob, werkstudent
@@ -14,7 +14,7 @@ class JobApply:
         self.contact = contact.strip()
         self.status = JobApply.valid_status(status) #research, applied, interview, offer, rejected, withdrawn
         self.applied_date = JobApply.valid_date(applied_date, "applied_date")
-        self.updated_date = date.today().isoformat() # Update the updated_date when the application is created or modified
+        self.updated_date =  JobApply.valid_date(updated_date, "updated_date") # Update the updated_date when the application is created or modified
         self.interview_date = JobApply.valid_date(interview_date, "interview_date") # could take None if not scheduled yet
         self.url = url
         self.notes = notes
@@ -48,7 +48,8 @@ class JobApply:
             location=data.get("location"),
             contact=data.get("contact"),
             status=data.get("status"),
-            applied_date = data.get("applied_date"),
+            applied_date =  data.get("applied_date"),
+            updated_date = date.fromisoformat(data["updated_date"])if data.get("updated_date") else None,
             interview_date= data.get("interview_date"),
             url=data.get("url"),
             notes=data.get("notes")
@@ -84,6 +85,8 @@ class JobApply:
         """Validate the date format. Accepts 'YYYY-MM-DD' format."""
         if date_str is None:
             return None
+        if isinstance(date_str, date):
+            return date_str
         try:
             return datetime.strptime(date_str, "%Y-%m-%d").date()
         except ValueError:
