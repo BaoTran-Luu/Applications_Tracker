@@ -56,12 +56,24 @@ class Application_Manager:
             "company", "position", "job_type", "location", "contact",
             "status", "applied_date", "interview_date", "url", "notes"]
 
+        changed = False
         for field, value in updates.items():
-            if field in allowed_fields:
-                setattr(application, field, value)
-            else:
+            if field not in allowed_fields:
                 print(f"Field '{field}' is not allowed for update.")
-        application.updated_date = date.today()
-        return True
+                continue
+            if getattr(application, field) != value:
+                setattr(application, field, value)
+                changed = True
 
+        # once an application has been in the interview stage, remember it forever
+        if application.status == "Interview":
+            application.had_interview = True
+
+        if changed:
+            application.updated_date = date.today()
+        return changed
+
+    def count_interviewed(self):
+            """Count applications that reached the interview stage at any time."""
+            return sum(1 for job in self.applications if job.had_interview)
     

@@ -3,8 +3,9 @@
 
 ## 🌟 About the Project
 
-A Python desktop application designed to help users organize, manage, and track their job applications in one place.
+A desktop application built with Python to help users organize, manage, and track their job applications in one place.
 The application provides an overview of the job search process through an interactive dashboard, search functionality, and visual statistics.
+It can be started from the command line or as a standalone Windows program (`.exe`), so it can be opened anytime without an editor.
 
 ## 🚀 Features
 
@@ -17,6 +18,7 @@ The application provides an overview of the job search process through an intera
 | 🎨 **Data Visualization** | View job search statistics using a colorful bar chart. |
 | 💾 **Data Persistence** | Store and retrieve application data using JSON. |
 | 📅 **Date Management** | Automatically track application update dates. |
+| 🖥️ **Desktop App** | Can be built into a standalone Windows program with PyInstaller. |
 
 ## 🛠️ Tech Stack
 
@@ -28,7 +30,7 @@ The application provides an overview of the job search process through an intera
   <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" />
 </p>
 
-Additional tools: `tkcalendar` · `uv` · `GitHub`
+Additional tools: `tkcalendar` · `PyInstaller` · `uv` · `GitHub`
 
 ## 🖥️ Application Preview
 📊 Dashboard 📝 Application Management 🔍 Search & Filtering
@@ -50,11 +52,19 @@ application_tracker/
 │       └── gui.py
 │
 ├── test/
+├── run_app.py
 ├── pyproject.toml
 ├── uv.lock
 ├── README.md
 └── .gitignore
 ```
+| File | Purpose |
+|:---|:---|
+| `job_application.py` | `JobApply` class with validation, plus conversion to and from dictionaries. |
+| `application_manager.py` | Add, remove, update, and list applications; counts interviews. |
+| `storage.py` | Save and load the applications as JSON. |
+| `gui.py` | Tkinter interface, dashboard, table, and chart. |
+| `run_app.py` | Start file used to build the Windows program. |
 
 ## ⚙️ Installation & Setup
 
@@ -81,7 +91,32 @@ uv sync
 ```bash
 uv run python -m application_tracker.gui
 ```
+## 💾 Where Is My Data Stored?
 
+The application saves your data in a fixed location, so it works the same from the command line and from the `.exe`:
+
+| System | File |
+|:---|:---|
+| Windows | `%APPDATA%\ApplicationTracker\applications.json` |
+| Other systems | `~/ApplicationTracker/applications.json` |
+
+To back up your data or move it to another computer, copy this file.
+
+## 🪟 Build a Windows Program (.exe)
+
+**1. Install PyInstaller**
+
+```bash
+uv add --dev pyinstaller
+```
+
+**2. Build the program**
+
+```bash
+uv run pyinstaller --onefile --windowed --name "Application Tracker" --paths src --hidden-import babel.numbers run_app.py
+```
+
+The finished program is created at `dist/Application Tracker.exe`. Move it to a folder of your choice and create a desktop shortcut.
 
 ## 🧠 What I Learned
 
@@ -92,13 +127,14 @@ Through this project, I gained practical experience in:
 - CRUD operations.
 - JSON data storage and retrieval.
 - Search and filtering functionality.
+- Input validation and error handling.
 - Data visualization with Matplotlib.
 - Python project management using uv.
+- Packaging a Python app as a Windows program with PyInstaller.
 - Version control with Git and GitHub.
 
 ## 🔮 Future Improvements
 
-- [ ] Improve input validation and error handling.
 - [ ] Add CSV and Excel export functionality.
 - [ ] Introduce additional dashboard visualizations.
 - [ ] Improve the user interface and user experience.

@@ -1,6 +1,7 @@
 """GUI for the Application Tracker."""
 
 import tkinter as tk
+import os
 
 from tkinter import ttk, messagebox
 from tkcalendar import DateEntry
@@ -11,6 +12,11 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from .job_application import JobApply
 from .application_manager import Application_Manager
 from .storage import load_applications_from_file, save_applications_to_file 
+from pathlib import Path
+
+DATA_DIR = Path(os.getenv("APPDATA", Path.home())) / "ApplicationTracker"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+DATA_FILE = DATA_DIR / "applications.json"
 
 class Application_gui:
     def __init__(self):
@@ -21,7 +27,7 @@ class Application_gui:
         
         #connect to the application manager
         self.manager = Application_Manager()
-        self.manager.applications = load_applications_from_file("test_applications.json")
+        self.manager.applications = load_applications_from_file(DATA_FILE)
         self.manager.update_next_id()
         
         #create shared styles for the application
@@ -107,14 +113,23 @@ class Application_gui:
         self.interviewed_number_label.pack(side=tk.RIGHT,anchor='w', padx=5, pady=(0, 5)) 
 
     def create_status_chart(self):
+        """Create the status chart to visualize application statuses."""
         self.figure = Figure(figsize=(6,2.2), dpi=100)
         self.ax = self.figure.add_subplot(111)
+        self.chart_canvas = FigureCanvasTkAgg(self.figure, master= self.dashboard_frame)
+        self.chart_canvas.draw()
+        self.chart_canvas.get_tk_widget().pack(fill=tk.BOTH, side=tk.RIGHT, expand=False, padx=10, pady=10)
+        self.refresh_status_chart()
+
+    def refresh_status_chart(self): #clear the chart and redraw it with updated data
+        """Refresh the status chart to reflect the current application statuses."""
+        self.ax.clear()
         statuses = ["Total", "Active", "Applied", "Interview", "Rejected", "Offer"]
         total = len(self.manager.applications)
         applied = total - len(self.manager.list_applications_by_status("Research"))
         active = sum( 1 for application in self.manager.applications
                 if application.status.lower() not in ["rejected", "withdrawn", "offer"])
-        interview = len(self.manager.list_applications_by_status("Interview"))
+        interview = self.manager.count_interviewed()
         rejected = len(self.manager.list_applications_by_status("Rejected"))
         offer = len(self.manager.list_applications_by_status ("Offer"))
 
@@ -132,11 +147,8 @@ class Application_gui:
         self.ax.spines["right"].set_visible(False)
        # In case add one more chart later
         self.figure.tight_layout()
-
-
-        self.chart_canvas = FigureCanvasTkAgg(self.figure, master= self.dashboard_frame)
         self.chart_canvas.draw()
-        self.chart_canvas.get_tk_widget().pack(fill=tk.BOTH, side=tk.RIGHT, expand=False, padx=10, pady=10)
+
 
     def create_main_section(self):
         """Create the main section for Button, Table and later is the chart"""
@@ -427,7 +439,9 @@ class Application_gui:
         #show active applications including those in the interview stage
         self.applied_number_label.config(text=str(len(self.manager.list_applications_by_status("Applied")) 
                                                   + len(self.manager.list_applications_by_status("Interview"))))
-        self.interviewed_number_label.config(text=str(len(self.manager.list_applications_by_status("Interview"))))
+        self.interviewed_number_label.config(text=str(self.manager.count_interviewed()))
+        self.refresh_status_chart()
+
 
     def create_table(self):
         """Create the table to display applications."""  
@@ -553,7 +567,7 @@ class Application_gui:
 
     def save_data(self):
         """Save all applications to the JSON file."""
-        save_applications_to_file( self.manager.applications,"test_applications.json")
+        save_applications_to_file( self.manager.applications,DATA_FILE)
         
     def run(self):
             """Run the main loop of the GUI."""

@@ -12,6 +12,7 @@ test_application.json
 # enviroment variables
 .env
 .env.*
+*.spec
 #database
 test_applications.json
 test_storage.py

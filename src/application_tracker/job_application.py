@@ -6,18 +6,19 @@ from datetime import datetime, date
 class JobApply:
 
    
-    def __init__(self, company, position, job_type, location, contact, status, applied_date, updated_date, interview_date, url, notes):
+    def __init__(self, company, position, job_type, location, contact, status, applied_date, interview_date, url, notes, updated_date=None, had_interview=None):
         self.company = company
-        self.position = position.title()
+        self.position = position.strip().title()
         self.job_type = JobApply.valid_job_type(job_type) # fulltime, parttime, minijob, werkstudent
         self.location = location
         self.contact = contact.strip()
         self.status = JobApply.valid_status(status) #research, applied, interview, offer, rejected, withdrawn
         self.applied_date = JobApply.valid_date(applied_date, "applied_date")
-        self.updated_date =  JobApply.valid_date(updated_date, "updated_date") # Update the updated_date when the application is created or modified
         self.interview_date = JobApply.valid_date(interview_date, "interview_date") # could take None if not scheduled yet
         self.url = url
         self.notes = notes
+        self.updated_date =  JobApply.valid_date(updated_date, "updated_date") or date.today()
+        self.had_interview = bool(had_interview) or self.status == "Interview"
 
 
 
@@ -35,7 +36,8 @@ class JobApply:
             "updated_date": self.updated_date.isoformat() if isinstance(self.updated_date, date) else self.updated_date,
             "interview_date": self.interview_date.isoformat() if self.interview_date else None,
             "url": self.url,
-            "notes": self.notes
+            "notes": self.notes,
+            "had_interview": self.had_interview
         }
 
     @classmethod
@@ -49,10 +51,11 @@ class JobApply:
             contact=data.get("contact"),
             status=data.get("status"),
             applied_date =  data.get("applied_date"),
-            updated_date = date.fromisoformat(data["updated_date"])if data.get("updated_date") else None,
+            updated_date = data.get("updated_date"),
             interview_date= data.get("interview_date"),
             url=data.get("url"),
-            notes=data.get("notes")
+            notes=data.get("notes"),
+            had_interview=data.get("had_interview")
         )
         application_id = data.get("application_id")
         application.application_id = (int(application_id) if application_id is not None else None)
