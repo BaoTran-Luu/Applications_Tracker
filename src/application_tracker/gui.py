@@ -128,7 +128,7 @@ class Application_gui:
         total = len(self.manager.applications)
         applied = total - len(self.manager.list_applications_by_status("Research"))
         active = sum( 1 for application in self.manager.applications
-                if application.status.lower() not in ["rejected", "withdrawn", "offer"])
+                if application.status.lower() not in ["rejected", "withdrawn", "offer", "research"])
         interview = self.manager.count_interviewed()
         rejected = len(self.manager.list_applications_by_status("Rejected"))
         offer = len(self.manager.list_applications_by_status ("Offer"))
@@ -438,7 +438,7 @@ class Application_gui:
         self.total_number_label.config(text=str(len(self.manager.list_applications())))
         #show active applications including those in the interview stage
         self.applied_number_label.config(text=str(len(self.manager.list_applications_by_status("Applied")) 
-                                                  + len(self.manager.list_applications_by_status("Interview"))))
+                                                  +len(self.manager.list_applications_by_status("Interview"))))
         self.interviewed_number_label.config(text=str(self.manager.count_interviewed()))
         self.refresh_status_chart()
 
